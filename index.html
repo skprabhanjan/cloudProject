@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BooksKart</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+<body>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+  <div class="container">
+    <div class="form-group" id="search" style=" margin-top: 10%;width: 50%;margin-left: 24%;">
+      <input type="text" class="form-control" id="title" placeholder="Search By Title" ng-model="searchValue">
+    </div> <br/><br/>
+    <div class="dispbook">
+      <ul>
+        <li ng-repeat="books in allbooks | filter:{'name' : searchValue}" ng-click="showDetails(books)" style="cursor:pointer" data-toggle="modal" data-target="#myModal">
+          {{books.name}}
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="container">
+  <div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" align="center">{{bookInfo.name}}</h4>
+        </div>
+        <div class="modal-body">
+          <div id="newprice" class="form-group" hidden="true">
+          <input type="text"  class="form-control" style="width: 20%;" placeholder="New Price" id="newpriceval" /> <br/>
+          <button type="button" class="btn btn-success" ng-click="priceUpdate()">Update</button>
+          <button type="button" class="btn btn-primary" ng-click="Cancel()">Cancel</button>
+          </div>
+          <br/>
+          Price : {{bookInfo.price}} &nbsp&nbsp&nbsp<span id="update" class="glyphicon glyphicon-pencil" style="color:green;cursor:pointer" ng-click="updatePrice()"></span> <br/>
+          Descrption : {{bookInfo.descrption}}<br/>
+          Copies : {{bookInfo.copies}} <br/>
+          Category : {{bookInfo.c_no}} <br/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" ng-click="deleteBook()">Delete</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="container">
+  <div class="modal fade" id="addModal" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" align="center">Add New Book</h4>
+        </div>
+        <div class="modal-body">
+          <input type="text" placeholder="Enter Name" class="form-control" id="name"/><br/>
+          <input type="text" placeholder="Enter Price" class="form-control" id="price"/><br/>
+          <input type="text" placeholder="Enter Descrption" class="form-control" id="desc"/><br/>
+          <input type="number" placeholder="Enter Number of Copies"class="form-control" id="copies"/><br/>
+          <input type="text" placeholder="Enter Category" class="form-control" id="category"/><br/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" ng-click="addBook()">Add</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="container">
+    <button type="button" class="btn btn-success" style="margin-left:2%;" data-toggle="modal" data-target="#addModal"><span class="glyphicon glyphicon-plus"> </span> New Book</button>
+  </div>
+</div>
+
+<script>
+var app = angular.module('myApp', []);
+app.controller('myCtrl', function($scope,$http) {
+  //$scope.allbooks = [];
+  $scope.bookInfo = [];
+  $http({
+      method: "GET",
+      url: "http://localhost:5000/get/books",
+    }).then(function(data){
+        dc("/get/books/GET");
+        $scope.allbooks = data.data.data;
+    }); 
+
+    $scope.Cancel = function(){
+      $('#newprice').hide();
+      $("#update").show();
+    }
+
+    function refresh(){
+      $http({
+      method: "GET",
+      url: "http://localhost:5000/get/books",
+     }).then(function(data){
+        dc("/get/books/GET");
+        $scope.allbooks = data.data.data;
+      }); 
+    } 
+
+  // $scope.allbooks = [
+  //   {title:"book1",price:100,descrption:"I dont know about this book1",copies:3,category:"cat1"},
+  //   {title:"book2",price:10,descrption:"I dont know about this book2",copies:9,category:"cat2"},
+  //   {title:"book3",price:17,descrption:"I dont know about this book3",copies:8,category:"cat3"},
+  //   {title:"book4",price:78,descrption:"I dont know about this book4",copies:1,category:"cat4"},
+  //   {title:"book5",price:90,descrption:"I dont know about this book5",copies:2,category:"cat5"},
+  // ]
+  // title,price,descrption,copies,category
+  $scope.showDetails = function(bookInfo){
+    $scope.bookInfo = bookInfo;
+  }
+  $scope.deleteBook = function(){
+    $http({
+      method: "POST",
+      url: "http://localhost:5000/remove/books",
+      data: {
+        bookName:$scope.bookInfo.name,
+     },
+    }).then(function(data){
+      dc("/remove/books/POST");
+        refresh();
+        $('#myModal').modal('toggle');
+    });
+  }
+  $scope.priceUpdate = function(){
+    $http({
+      method: "POST",
+      url: "http://localhost:5000/modify/books/price",
+      data: {
+        cat_name: $scope.bookInfo.name,
+        newPrice: $("#newpriceval").val()
+     },
+    }).then(function(data){
+        dc("/modify/books/price");
+        $('#myModal').modal('toggle');
+        $('#newprice').hide();
+        $("#update").show();
+        refresh();
+    });
+  }
+  $scope.updatePrice = function(){
+    $('#newprice').show();
+    $("#update").hide();
+  }
+  function dc(req){
+    var data = {
+        bookName:$('#name').val(),
+        price: $('#price').val(),
+        desc: $('#desc').val(),
+        cat_no: $('#category').val(),
+        copies: $('#copies').val()
+    };
+    $http({
+      method: "POST",
+      url: "http://localhost:9000/server/request/redirect",
+      data: {
+        requestString: req,
+        data: data
+      }
+    });
+  }
+  $scope.addBook = function(){
+    $http({
+      method: "POST",
+      url: "http://localhost:5000/add/books",
+      data: {
+        bookName:$('#name').val(),
+        price: $('#price').val(),
+        desc: $('#desc').val(),
+        cat_no: $('#category').val(),
+        copies: $('#copies').val()
+    },
+    }).then(function(data){
+        dc("/add/books/POST");
+        //window.location.reload();
+        $('#addModal').modal('toggle');
+        refresh();
+    });
+  }
+});
+</script>
+
+</body>
+</html>
