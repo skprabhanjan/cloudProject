@@ -1,6 +1,0 @@
-mysql:
-  build: docker-build-contexts/mysql
-  ports:
-    - 3306
-  environment:
-    - MYSQL_DATABASE=root
